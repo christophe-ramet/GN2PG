@@ -17,6 +17,7 @@ Exceptions:
 import json
 import logging
 import math
+from json import JSONDecodeError
 from typing import List, Optional
 from urllib.parse import urlencode
 
@@ -56,7 +57,7 @@ class BaseAPI:
         self._http_status = 0
         self._ctrl = controler
         logger.debug(_("controler is %s"), self._ctrl)
-        self._api_url = config.url + "/" * (not config.url.endswith("/")) + "api/"
+        self._api_url = config.api_url
 
         self._session = self._create_session(config)
 
@@ -64,10 +65,9 @@ class BaseAPI:
             "login": config.user_name,
             "password": config.user_password,
         }
-
         try:
             login = self._session.post(
-                self._api_url + "auth/login",
+                config.api_url + "auth/login",
                 json=auth_payload,
                 timeout=self._timeout,
             )
@@ -78,6 +78,12 @@ class BaseAPI:
                     self._config.name,
                 )
         except HTTPError as error:
+            error_json = ""
+            try:
+                error_json = error.response.json()
+            except JSONDecodeError:
+                pass
+
             logger.critical(
                 _(
                     "Login into GeoNature from source %(source)s failed with status code "
@@ -86,7 +92,7 @@ class BaseAPI:
                 {
                     "source": self._config.name,
                     "status_code": error.response.status_code,
-                    "message": error.response.json(),
+                    "message": error_json,
                 },
             )
             raise error

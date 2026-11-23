@@ -159,4 +159,3 @@ dmypy.json
 **/obj
 **/secrets.dev.yaml
 **/values.dev.yaml
-configs
